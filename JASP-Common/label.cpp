@@ -1,17 +1,36 @@
+//
+// Copyright (C) 2013-2016 University of Amsterdam
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 2 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 #include "label.h"
 
 #include <sstream>
 #include <cstring>
 
+void Label::_setLabel(const std::string &label) {
+    _stringLength = label.length();
+    if (sizeof(_stringValue) < label.length())
+        _stringLength = sizeof(_stringValue);
+
+    std::memcpy(_stringValue, label.c_str(), _stringLength);
+}
+
 Label::Label(const std::string &label, int value)
 {
-	_stringLength = label.length();
-	if (sizeof(_stringValue) < label.length())
-		_stringLength = sizeof(_stringValue);
-
-	std::memcpy(_stringValue, label.c_str(), _stringLength);
-
+    _setLabel(label);
 	_hasIntValue = true;
 	_intValue = value;
 }
@@ -49,6 +68,10 @@ bool Label::hasIntValue() const
 int Label::value() const
 {
 	return _intValue;
+}
+
+void Label::setLabel(const std::string &label) {
+    _setLabel(label);
 }
 
 Label &Label::operator=(const Label &label)

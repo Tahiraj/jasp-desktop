@@ -1,3 +1,19 @@
+//
+// Copyright (C) 2013-2016 University of Amsterdam
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 2 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 #include "rbridge.h"
 
@@ -15,6 +31,7 @@ using namespace std;
 RCallback rbridge_runCallback;
 boost::function<void(const std::string &, std::string &, std::string &)> rbridge_fileNameSource;
 boost::function<void(std::string &, std::string &)> rbridge_stateFileSource;
+boost::function<DataSet *()> rbridge_dataSetSource;
 
 Rcpp::DataFrame rbridge_readDataSetSEXP(SEXP columns, SEXP columnsAsNumeric, SEXP columnsAsOrdinal, SEXP columnsAsNominal, SEXP allColumns);
 Rcpp::DataFrame rbridge_readDataSetHeaderSEXP(SEXP columns, SEXP columnsAsNumeric, SEXP columnsAsOrdinal, SEXP columnsAsNominal, SEXP allColumns);
@@ -47,17 +64,16 @@ void rbridge_init()
 	rInside[".callbackNative"] = Rcpp::InternalFunction(&rbridge_callbackSEXP);
 	rInside[".requestTempFileNameNative"] = Rcpp::InternalFunction(&rbridge_requestTempFileNameSEXP);
 	rInside[".requestStateFileNameNative"] = Rcpp::InternalFunction(&rbridge_requestStateFileNameSEXP);
-	rInside[".baseCitation"] = "Love, J., Selker, R., Marsman, M., Jamil, T., Dropmann, D., Verhagen, A. J., Ly, A., Gronau, Q. F., Smira, M., Epskamp, S., Matzke, D., Wild, A., Knight, P., Rouder, J. N., Morey, R. D., & Wagenmakers, E.-J. (2015). JASP (Version 0.7.1)[Computer software].";
+	rInside[".baseCitation"] = "Love, J., Selker, R., Marsman, M., Jamil, T., Dropmann, D., Verhagen, A. J., Ly, A., Gronau, Q. F., Smira, M., Epskamp, S., Matzke, D., Wild, A., Knight, P., Rouder, J. N., Morey, R. D., & Wagenmakers, E.-J. (2015). JASP (Version 0.7.5)[Computer software].";
 
 	rInside["jasp.analyses"] = Rcpp::List();
-	rInside.parseEvalQNT("suppressPackageStartupMessages(library(\"RJSONIO\"))");
 	rInside.parseEvalQNT("suppressPackageStartupMessages(library(\"JASP\"))");
 	rInside.parseEvalQNT("suppressPackageStartupMessages(library(\"methods\"))");
 }
 
-void rbridge_setDataSet(DataSet *dataSet)
+void rbridge_setDataSetSource(boost::function<DataSet* ()> source)
 {
-	rbridge_dataSet = dataSet;
+	rbridge_dataSetSource = source;
 }
 
 void rbridge_setFileNameSource(boost::function<void (const string &, string &, string &)> source)
@@ -129,10 +145,7 @@ string rbridge_run(const string &name, const string &options, const string &perf
 Rcpp::DataFrame rbridge_readDataSet(const std::map<std::string, Column::ColumnType> &columns)
 {
 	if (rbridge_dataSet == NULL)
-	{
-		std::cout << "rbridge dataset not set!\n";
-		std::cout.flush();
-	}
+		rbridge_dataSet = rbridge_dataSetSource();
 
 	Rcpp::List list(columns.size());
 	Rcpp::CharacterVector columnNames;
@@ -244,7 +257,7 @@ Rcpp::DataFrame rbridge_readDataSet(const std::map<std::string, Column::ColumnTy
 				{
 					(void)column;
 
-					if (isnan(value))
+					if (std::isnan(value))
 						continue;
 
 					int intValue;
@@ -292,7 +305,7 @@ Rcpp::DataFrame rbridge_readDataSet(const std::map<std::string, Column::ColumnTy
 				{
 					(void)column;
 
-					if (isnan(value))
+					if (std::isnan(value))
 						v[rowNo] = INT_MIN;
 					else if (isfinite(value))
 						v[rowNo] = valueToIndex[(int)(value * 1000)] + 1;
@@ -321,10 +334,7 @@ Rcpp::DataFrame rbridge_readDataSet(const std::map<std::string, Column::ColumnTy
 Rcpp::DataFrame rbridge_readDataSetHeader(const std::map<string, Column::ColumnType> &columns)
 {
 	if (rbridge_dataSet == NULL)
-	{
-		std::cout << "rbridge dataset not set!\n";
-		std::cout.flush();
-	}
+		rbridge_dataSet = rbridge_dataSetSource();
 
 	Rcpp::List list(columns.size());
 	Rcpp::CharacterVector columnNames;
@@ -447,6 +457,9 @@ std::map<string, Column::ColumnType> rbridge_marshallSEXPs(SEXP columns, SEXP co
 
 	if (Rf_isLogical(allColumns) && Rcpp::as<bool>(allColumns))
 	{
+		if (rbridge_dataSet == NULL)
+			rbridge_dataSet = rbridge_dataSetSource();
+
 		BOOST_FOREACH(const Column &column, rbridge_dataSet->columns())
 			columnsRequested[column.name()] = Column::ColumnTypeUnknown;
 	}
@@ -507,4 +520,3 @@ string rbridge_check()
 	else
 		return "null";
 }
-

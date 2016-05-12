@@ -1,3 +1,21 @@
+//
+// Copyright (C) 2013-2016 University of Amsterdam
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public
+// License along with this program.  If not, see
+// <http://www.gnu.org/licenses/>.
+//
+
 #ifndef TABBAR_H
 #define TABBAR_H
 
@@ -6,6 +24,11 @@
 #include <QHBoxLayout>
 #include <QList>
 #include <QPushButton>
+#include <QComboBox>
+#include <QMenu>
+#include <QMenuBar>
+#include <QAction>
+#include <QSettings>
 
 class TabBar : public QWidget
 {
@@ -32,6 +55,10 @@ public slots:
 private slots:
 	void tabSelectedHandler();
 	void helpToggledHandler(bool on);
+	void showAbout();
+	void toggleHelp();
+	void toggleSEM();
+	void toggleReinforcement();
 
 private:
 
@@ -42,6 +69,10 @@ private:
 
 	QPushButton *_optionsTab;
 	QPushButton *_helpTab;
+	QComboBox *_comboTab;
+	QMenu *_menuTab;
+	QMenuBar *_menuBarTab;
+	QSettings _settings;
 
 };
 

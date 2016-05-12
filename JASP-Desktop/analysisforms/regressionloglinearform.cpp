@@ -1,3 +1,21 @@
+//
+// Copyright (C) 2013-2016 University of Amsterdam
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public
+// License along with this program.  If not, see
+// <http://www.gnu.org/licenses/>.
+//
+
 #include "regressionloglinearform.h"
 #include "ui_regressionloglinearform.h"
 
@@ -15,10 +33,6 @@ RegressionLogLinearForm::RegressionLogLinearForm(QWidget *parent) :
 	_countsModel->setVariableTypesAllowed(Column::ColumnTypeScale | Column::ColumnTypeNominal | Column::ColumnTypeOrdinal);
 	ui->counts->setModel(_countsModel);
 
-	ui->method->addItem("Enter");
-	ui->method->addItem("Backward");
-	ui->method->addItem("Forward");
-
 	_factorsModel = new TableModelVariablesAssigned();
 	_factorsModel->setSource(&_availableVariablesModel);
 	_factorsModel->setVariableTypesSuggested(Column::ColumnTypeNominal | Column::ColumnTypeOrdinal);
@@ -32,7 +46,7 @@ RegressionLogLinearForm::RegressionLogLinearForm(QWidget *parent) :
 	ui->modelTerms->setModel(_model);
 	ui->modelTerms->hide();
 
-	connect(_factorsModel, SIGNAL(assignedTo(Terms)), _model, SLOT(addCovariates(Terms)));
+	connect(_factorsModel, SIGNAL(assignedTo(Terms)), _model, SLOT(addFixedFactors(Terms)));
 	connect(_factorsModel, SIGNAL(unassigned(Terms)), _model, SLOT(removeVariables(Terms)));
 
 	ui->panelStatistics->hide();

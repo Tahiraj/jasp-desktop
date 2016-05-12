@@ -1,3 +1,21 @@
+//
+// Copyright (C) 2013-2016 University of Amsterdam
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public
+// License along with this program.  If not, see
+// <http://www.gnu.org/licenses/>.
+//
+
 #include "anovabayesianform.h"
 #include "ui_anovabayesianform.h"
 
@@ -34,6 +52,11 @@ AnovaBayesianForm::AnovaBayesianForm(QWidget *parent) :
 	ui->modelTerms->setModel(_anovaModel);
 	ui->modelTerms->hide();
 
+	ui->advancedOptions->hide();
+
+	ui->priorFixedEffects->setLabel("r scale fixed effects");
+	ui->priorRandomEffects->setLabel("r scale random effects");
+
 	connect(_fixedFactorsListModel, SIGNAL(assignmentsChanging()), this, SLOT(factorsChanging()));
 	connect(_fixedFactorsListModel, SIGNAL(assignmentsChanged()), this, SLOT(factorsChanged()));
 	connect(_fixedFactorsListModel, SIGNAL(assignedTo(Terms)), _anovaModel, SLOT(addFixedFactors(Terms)));
@@ -45,9 +68,9 @@ AnovaBayesianForm::AnovaBayesianForm(QWidget *parent) :
 	connect(_randomFactorsListModel, SIGNAL(unassigned(Terms)), _anovaModel, SLOT(removeVariables(Terms)));
 
 #ifdef QT_DEBUG
-	ui->groupBox->setStyleSheet("QWidget { background-color: pink; }");
+	ui->advancedBox->setStyleSheet("QWidget { background-color: pink; }");
 #else
-	ui->groupBox->hide();
+	ui->advancedBox->hide();
 #endif
 }
 

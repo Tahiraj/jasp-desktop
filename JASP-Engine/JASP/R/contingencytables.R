@@ -1,4 +1,19 @@
-
+#
+# Copyright (C) 2013-2015 University of Amsterdam
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
 
 ContingencyTables <- function(dataset=NULL, options, perform="run", callback=function(...) 0, ...) {
 
@@ -24,16 +39,11 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 
 	results <- list()
 	
-	### META
-
-	meta <- list()
-	meta[[1]] <- list(name="title", type="title")
-	meta[[2]] <- list(name="Contingency Tables", type="tables")
-	
-	results[[".meta"]] <- meta
+	### TITLE
 	
 	results[["title"]] <- "Contingency Tables"
 	
+	meta <- list()
 	
 	### CROSS TABS
 	
@@ -59,15 +69,52 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 	}
 	
 	analyses <- .dataFrameToRowList(analyses)
-
+	
 	for (analysis in analyses)
 	{
 		tables <- .crosstab(dataset, options, perform, analysis)
-		for (table in tables)
-			crosstabs[[length(crosstabs)+1]] <- table				
+		
+		if (!is.null(tables[["counts.table"]])) {
+			
+			results[["Counts Table"]] <- tables[["counts.table"]]
+			meta[[length(meta)+1]] <- list(name="Counts Table", type="table")
+		
+		}
+		if (!is.null(tables[["tests.table"]])) {
+			
+			results[["Tests Table"]] <- tables[["tests.table"]]
+			meta[[length(meta)+1]] <- list(name="Tests Table", type="table")
+		
+		}
+		if (!is.null(tables[["odds.ratio.table"]])) {
+			
+			results[["Odds Ratio Table"]] <- tables[["odds.ratio.table"]]
+			meta[[length(meta)+1]] <- list(name="Odds Ratio Table", type="table")
+		
+		}	
+		if (!is.null(tables[["nominal.table"]])) {
+			
+			results[["Nominal Table"]] <- tables[["nominal.table"]]
+			meta[[length(meta)+1]] <- list(name="Nominal Table", type="table")
+		
+		}	
+		if (!is.null(tables[["ordinal.table"]])) {
+			
+			results[["Ordinal Table"]] <- tables[["ordinal.table"]]
+			meta[[length(meta)+1]] <- list(name="Ordinal Table", type="table")
+		
+		}	
+		if (!is.null(tables[["kendalls.table"]])) {
+			
+			results[["Kendalls Table"]] <- tables[["kendalls.table"]]
+			meta[[length(meta)+1]] <- list(name="Kendalls Table", type="table")
+		
+		}	
 	}
-
-	results[["Contingency Tables"]] <- crosstabs
+	
+	results[[".meta"]] <- meta
+	
+	
 
 	if (perform == "run" || length(options$rows) == 0 || length(options$columns) == 0) {
 	
@@ -368,18 +415,19 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 		odds.ratio.table <- list()
 		
 		odds.ratio.table[["title"]] <- "Log Odds Ratio"
+		ci.label <- paste(100*options$oddsRatioConfidenceIntervalInterval, "% Confidence Intervals", sep="")
 		
 		odds.ratio.fields <- fields
 			
 		odds.ratio.fields[[length(odds.ratio.fields)+1]] <- list(name="type[oddsRatio]", title="", type="string")
-		odds.ratio.fields[[length(odds.ratio.fields)+1]] <- list(name="value[oddsRatio]", title="Log\u2009(\u2009odds ratio)", type="number", format="sf:4;dp:3")
-		odds.ratio.fields[[length(odds.ratio.fields)+1]] <- list(name="low[oddsRatio]", title="Lower CI", type="number", format="dp:3")
-		odds.ratio.fields[[length(odds.ratio.fields)+1]] <- list(name="up[oddsRatio]",  title="Upper CI", type="number", format="dp:3")
+		odds.ratio.fields[[length(odds.ratio.fields)+1]] <- list(name="value[oddsRatio]", title="Log Odds Ratio", type="number", format="sf:4;dp:3")
+		odds.ratio.fields[[length(odds.ratio.fields)+1]] <- list(name="low[oddsRatio]", title="Lower",overTitle=ci.label, type="number", format="dp:3")
+		odds.ratio.fields[[length(odds.ratio.fields)+1]] <- list(name="up[oddsRatio]",  title="Upper",overTitle=ci.label, type="number", format="dp:3")
 		
 		odds.ratio.fields[[length(odds.ratio.fields)+1]] <- list(name="type[FisherTest]", title="", type="string")
-		odds.ratio.fields[[length(odds.ratio.fields)+1]] <- list(name="value[FisherTest]", title="Log\u2009(\u2009odds ratio)", type="number", format="sf:4;dp:3")
-		odds.ratio.fields[[length(odds.ratio.fields)+1]] <- list(name="low[FisherTest]", title="Lower CI", type="number", format="dp:3")
-		odds.ratio.fields[[length(odds.ratio.fields)+1]] <- list(name="up[FisherTest]",  title="Upper CI", type="number", format="dp:3")
+		odds.ratio.fields[[length(odds.ratio.fields)+1]] <- list(name="value[FisherTest]", title="Log Odds Ratio", type="number", format="sf:4;dp:3")
+		odds.ratio.fields[[length(odds.ratio.fields)+1]] <- list(name="low[FisherTest]", title="Lower", overTitle=ci.label, type="number", format="dp:3")
+		odds.ratio.fields[[length(odds.ratio.fields)+1]] <- list(name="up[FisherTest]",  title="Upper", overTitle=ci.label, type="number", format="dp:3")
 		
 		schema <- list(fields=odds.ratio.fields)
 		
@@ -389,7 +437,7 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 	
 	##### Nominal Table (Symmetric Measures)
 	
-	if (options$contingencyCoefficient|| options$phiAndCramersV) {
+	if (options$contingencyCoefficient|| options$phiAndCramersV || options$lambda) {
 		
 		nominal.table <- list()
 
@@ -409,6 +457,13 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 			nominal.fields[[length(nominal.fields)+1]] <- list(name="type[CramerV]", title="", type="string")
 			nominal.fields[[length(nominal.fields)+1]] <- list(name="value[CramerV]", title="Value", type="number", format="sf:4;dp:3")
 		}
+		
+		if (options$lambda) {
+			nominal.fields[[length(nominal.fields)+1]] <- list(name="type[LambdaR]", title="", type="string")
+			nominal.fields[[length(nominal.fields)+1]] <- list(name="value[LambdaR]", title="Value", type="number", format="sf:4;dp:3")
+			nominal.fields[[length(nominal.fields)+1]] <- list(name="type[LambdaC]", title="", type="string")
+			nominal.fields[[length(nominal.fields)+1]] <- list(name="value[LambdaC]", title="Value", type="number", format="sf:4;dp:3")
+		}
 
 		schema <- list(fields=nominal.fields)
 
@@ -422,13 +477,16 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 		ordinal.table <- list()
 		
 		ordinal.table[["title"]] <- "Ordinal Gamma"
+		ci.label <- paste( "95% Confidence Intervals")
 		
 		ordinal.fields <- fields
 		
 		ordinal.fields[[length(ordinal.fields)+1]] <- list(name="value[gammaCoef]", title="Gamma", type="number", format="sf:4;dp:3")
-		ordinal.fields[[length(ordinal.fields)+1]] <- list(name="Sigma[gammaCoef]", title="std. error", type="number", format="dp:3")
-		ordinal.fields[[length(ordinal.fields)+1]] <- list(name="low[gammaCoef]", title="Lower CI", type="number", format="dp:3")
-		ordinal.fields[[length(ordinal.fields)+1]] <- list(name="up[gammaCoef]",  title="Upper CI", type="number", format="dp:3")
+		ordinal.fields[[length(ordinal.fields)+1]] <- list(name="Sigma[gammaCoef]", title="Standard Error", type="number", format="dp:3")
+		ordinal.fields[[length(ordinal.fields)+1]] <- list(name="low[gammaCoef]", title="Lower",overTitle=ci.label, type="number", format="dp:3")
+		ordinal.fields[[length(ordinal.fields)+1]] <- list(name="up[gammaCoef]",  title="Upper",overTitle=ci.label, type="number", format="dp:3")
+		#ordinal.fields[[length(ordinal.fields)+1]] <- list(name="low[gammaCoef]", title="Lower CI", type="number", format="dp:3")
+		#ordinal.fields[[length(ordinal.fields)+1]] <- list(name="up[gammaCoef]",  title="Upper CI", type="number", format="dp:3")
 		
 		schema <- list(fields=ordinal.fields)
 		
@@ -446,8 +504,8 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 		kendalls.fields <- fields
 			
 		#kendalls.fields[[length(kendalls.fields)+1]] <- list(name="type[kTauB]", title="", type="string")
-		kendalls.fields[[length(kendalls.fields)+1]] <- list(name="value[kTauB]", title="Kendall's Tau B", type="number", format="sf:4;dp:3")
-		kendalls.fields[[length(kendalls.fields)+1]] <- list(name="statistic[kTauB]", title="z statistic", type="number", format="dp:3")
+		kendalls.fields[[length(kendalls.fields)+1]] <- list(name="value[kTauB]", title="Kendall's Tau-b ", type="number", format="sf:4;dp:3")
+		kendalls.fields[[length(kendalls.fields)+1]] <- list(name="statistic[kTauB]", title="Z", type="number", format="dp:3")
 		kendalls.fields[[length(kendalls.fields)+1]] <- list(name="p[kTauB]", title="p", type="number", format="dp:3;p:.001")
 		
 		
@@ -523,7 +581,7 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 	if (status$error)
 		counts.table[["error"]] <- list(errorType="badData", errorMessage=status$errorMessage)
 	
-	tables[[1]] <- counts.table
+	tables[["counts.table"]] <- counts.table
 	
 	if (options$chiSquared || options$chiSquaredContinuityCorrection || options$likelihoodRatio ) {
 
@@ -533,7 +591,7 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 		if (status$error)
 			tests.table[["error"]] <- list(errorType="badData")
 
-		tables[[2]] <- tests.table
+		tables[["tests.table"]] <- tests.table
 	}
 	
 	if (options$oddsRatio) {
@@ -543,10 +601,10 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 		if (status$error)
 			odds.ratio.table[["error"]] <- list(errorType="badData")
 			
-		tables[[3]] <- odds.ratio.table
+		tables[["odds.ratio.table"]] <- odds.ratio.table
 	}
 	
-	if (options$contingencyCoefficient || options$phiAndCramersV) {
+	if (options$contingencyCoefficient || options$phiAndCramersV || options$lambda) {
 	
 		nominal.table[["data"]] <- nominal.rows
 		nominal.table[["footnotes"]] <- as.list(nominal.footnotes)
@@ -554,7 +612,7 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 		if (status$error)
 			nominal.table[["error"]] <- list(errorType="badData")
 		
-		tables[[4]] <- nominal.table
+		tables[["nominal.table"]] <- nominal.table
 	}
 	
 	if (options$gamma) {
@@ -565,7 +623,7 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 		if (status$error)
 			ordinal.table[["error"]] <- list(errorType="badData")
 		
-		tables[[5]] <- ordinal.table
+		tables[["ordinal.table"]] <- ordinal.table
 	}
 	
 	if (options$kendallsTauB) {
@@ -576,7 +634,7 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 		if (status$error)
 			kendalls.table[["error"]] <- list(errorType="badData")
 		
-		tables[[6]] <- kendalls.table
+		tables[["kendalls.table"]] <- kendalls.table
 	}
 
 	tables
@@ -673,7 +731,7 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 	
 	if (options$chiSquaredContinuityCorrection) {
 	
-		row[["type[chiSquared-cc]"]] <- "\u03A7\u00B2 Continuity correction"
+		row[["type[chiSquared-cc]"]] <- "\u03A7\u00B2 continuity correction"
 
 		if (perform == "run" && status$error == FALSE && status$ready) {
 		
@@ -782,7 +840,7 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 
 	if (options$contingencyCoefficient) {
 		 
-		row[["type[ContCoef]"]] <- "Contingency Coefficient" 
+		row[["type[ContCoef]"]] <- "Contingency coefficient" 
 		 
 		if (perform == "run" && status$error == FALSE) {
 			 
@@ -822,7 +880,7 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 
 	if (options$phiAndCramersV) {
 	
-		row[["type[PhiCoef]"]] <- "Phi-Coefficient"
+		row[["type[PhiCoef]"]] <- "Phi-coefficient"
 		
 		
 		if (perform == "run" && status$error == FALSE) {
@@ -900,6 +958,59 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 		}
 	}
 
+	 if (options$lambda) {
+		
+		row[["type[LambdaR]"]] <- paste("Lambda (", options$rows, "dependent)", sep= " ")
+		
+		if (perform == "run" && status$error == FALSE) {
+				
+				N <- sum(counts.matrix)
+				E1 <- N- max(rowSums(counts.matrix))
+				E2 <- sum(apply(counts.matrix,2, function (x) sum(x)-max(x) ))
+				lambda<-(E1-E2)/E1
+				row[["value[LambdaR]"]] <- lambda
+			
+		 if (is.na(lambda)) {
+		
+				row[["value[LambdaR]"]] <- .clean(NaN)
+	
+				sup <- .addFootnote(footnotes, "Value could not be calculated - At least one row sums or column sums contains all zeros")
+				row.footnotes[["value[LambdaR]"]] <- list(sup)
+				
+		
+		}
+		} else {
+			
+			row[["value[LambdaR]"]] <- "."
+		}
+	}
+	
+	
+	if (options$lambda) {
+		
+		row[["type[LambdaC]"]] <- paste("Lambda (", options$columns, "dependent)", sep= " ")
+		
+		if (perform == "run" && status$error == FALSE) {
+				
+				N <- sum(counts.matrix)
+				E1 <- N- max(colSums(counts.matrix))
+				E2 <- sum(apply(counts.matrix,1, function (x) sum(x)-max(x) ))
+				lambda<-(E1-E2)/E1
+				print(N)
+				print(E1)
+				print(E2)
+				print(lambda)
+				row[["value[LambdaC]"]] <- lambda
+			
+			
+		} else {
+			
+			row[["value[LambdaC]"]] <- "."
+		}
+	}
+	
+
+
 	row[[".footnotes"]] <- row.footnotes
 	list(row)
 }
@@ -925,7 +1036,7 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 	
 	if (options$gamma) {
 		
-		row[["type[gammaCoef]"]] <- "Gamma Coefficient"
+		row[["type[gammaCoef]"]] <- "Gamma coefficient"
 		
 		
 		if (perform == "run" && status$error == FALSE) {
@@ -935,6 +1046,9 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 				chi.result <- vcdExtra::GKgamma(counts.matrix)
 				
 			})
+			
+			print(chi.result)
+			print("we are here")
 			
 			if (class(chi.result) == "try-error") {
 				
@@ -986,7 +1100,7 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 			
 	if (options$kendallsTauB) {
 		
-		row[["type[kTauB]"]] <- "Kendall's Tau B"
+		row[["type[kTauB]"]] <- "Kendall's Tau-b"
 		
 		
 		if (perform == "run" && status$error == FALSE) {
@@ -1288,7 +1402,7 @@ ContingencyTables <- function(dataset=NULL, options, perform="run", callback=fun
 			
 			if (options$countsExpected) {
 			
-				row.expected[["type[expected]"]] <- "Expected Count"
+				row.expected[["type[expected]"]] <- "Expected count"
 
 				expected <- as.list(expected.matrix[i,])
 				names(expected) <- paste(names(expected),"[expected]",  sep="")

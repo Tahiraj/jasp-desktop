@@ -1,5 +1,23 @@
+//
+// Copyright (C) 2013-2016 University of Amsterdam
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 2 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 #include "csv.h"
+
+#include <boost/algorithm/string.hpp>
 
 #include <iostream>
 #include <cstring>
@@ -8,6 +26,7 @@
 #include "utils.h"
 
 using namespace std;
+using boost::algorithm::trim;
 
 CSV::CSV(const string &path)
 {
@@ -346,28 +365,39 @@ bool CSV::readLine(vector<string> &items)
 		else if (ch == _delim)
 		{
 			string token(&_utf8Buffer[_utf8BufferStartPos], i - _utf8BufferStartPos);
+			trim(token);
+
 			items.push_back(token);
 			_utf8BufferStartPos = i + 1;
 		}
 		else if (ch == '\r')
 		{
-			string token(&_utf8Buffer[_utf8BufferStartPos], i - _utf8BufferStartPos);
-			items.push_back(token);
+            if (items.size() > 0 || i > _utf8BufferStartPos) {
+                string token(&_utf8Buffer[_utf8BufferStartPos], i - _utf8BufferStartPos);
+                trim(token);
+                items.push_back(token);
+            }
 
 			if (i + 1 < _utf8BufferEndPos && _utf8Buffer[i + 1] == '\n')
 				_utf8BufferStartPos = i + 2;
 			else
 				_utf8BufferStartPos = i + 1;
 
-			break;
+            if (items.size() > 0)
+                break;
 		}
 		else if (ch == '\n')
 		{
-			string token(&_utf8Buffer[_utf8BufferStartPos], i - _utf8BufferStartPos);
-			items.push_back(token);
+            if (items.size() > 0 || i > _utf8BufferStartPos) {
+                string token(&_utf8Buffer[_utf8BufferStartPos], i - _utf8BufferStartPos);
+                trim(token);
+                items.push_back(token);
+            }
 
 			_utf8BufferStartPos = i + 1;
-			break;
+
+            if (items.size() > 0)
+                break;
 		}
 
 		if (i >= _utf8BufferEndPos - 1)
@@ -380,8 +410,11 @@ bool CSV::readLine(vector<string> &items)
 			}
 			else // eof
 			{
-				string token(&_utf8Buffer[_utf8BufferStartPos], _utf8BufferEndPos - _utf8BufferStartPos);
-				items.push_back(token);
+                if (items.size() > 0 || _utf8BufferEndPos > _utf8BufferStartPos) {
+                    string token(&_utf8Buffer[_utf8BufferStartPos], _utf8BufferEndPos - _utf8BufferStartPos);
+                    trim(token);
+                    items.push_back(token);
+                }
 				_eof = true;
 				break;
 			}
@@ -390,12 +423,12 @@ bool CSV::readLine(vector<string> &items)
 		i++;
 	}
 
-	for (int i = 0; i < items.size(); i++)
+    for (size_t index = 0; index < items.size(); index++)
 	{
-		string item = items.at(i);
+        string item = items.at(index);
 		if (item.size() >= 2 && item[0] == '"' && item[item.size()-1] == '"')
 			item = item.substr(1, item.size()-2);
-		items[i] = item;
+        items[index] = item;
 	}
 
 	return true;
